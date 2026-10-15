@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify - Web Player: Music for everyone</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        spotify: {
+                            green: '#1DB954',
+                            greenHover: '#1ed760',
+                            black: '#0f051d',
+                            base: '#1a0b2e',
+                            elevated: '#261447',
+                            highlight: '#381e68',
+                            press: '#090214',
+                            subdued: '#d8b4fe',
+                            cardHover: '#351c63'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        input[type="range"].spotify-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #4d4d4d;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"].spotify-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s ease-in-out, transform 0.1s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .slider-group:hover input[type="range"].spotify-slider::-webkit-slider-thumb,
+        input[type="range"].spotify-slider:focus::-webkit-slider-thumb {
+            opacity: 1;
+        }
+
+        @keyframes peak-eq-1 {
+            0%, 100% { height: 4px; filter: drop-shadow(0 0 2px #ec4899); }
+            50% { height: 26px; filter: drop-shadow(0 0 10px #ec4899); }
+        }
+        @keyframes peak-eq-2 {
+            0%, 100% { height: 22px; filter: drop-shadow(0 0 2px #38bdf8); }
+            25% { height: 6px; filter: drop-shadow(0 0 10px #38bdf8); }
+            75% { height: 28px; filter: drop-shadow(0 0 12px #38bdf8); }
+        }
+        @keyframes peak-eq-3 {
+            0%, 100% { height: 10px; filter: drop-shadow(0 0 2px #fde047); }
+            40% { height: 32px; filter: drop-shadow(0 0 14px #fde047); }
+            80% { height: 4px; filter: drop-shadow(0 0 2px #fde047); }
+        }
+        .peak-eq-1 { animation: peak-eq-1 0.5s infinite ease-in-out; }
+        .peak-eq-2 { animation: peak-eq-2 0.45s infinite ease-in-out; }
+        .peak-eq-3 { animation: peak-eq-3 0.6s infinite ease-in-out; }
+
+        @keyframes neon-particle-float {
+            0% { transform: translateY(0px) scale(1) rotate(0deg); opacity: 0.2; }
+            50% { transform: translateY(-40px) scale(1.4) rotate(180deg); opacity: 0.9; }
+            100% { transform: translateY(-80px) scale(0.6) rotate(360deg); opacity: 0; }
+        }
+        .neon-particle {
+            animation: neon-particle-float 3s infinite ease-in-out;
+        }
+
+        .scene-3d { perspective: 1000px; }
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.25s ease;
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .card-3d:hover {
+            box-shadow: 0 24px 42px -8px rgba(0, 0, 0, 0.85), 0 0 22px rgba(29, 185, 84, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.25);
+        }
+        .card-3d-inner { transform: translateZ(24px); }
+
+        @keyframes spin-3d-vinyl {
+            0% { transform: rotateX(22deg) rotateY(-14deg) rotateZ(0deg); }
+            50% { transform: rotateX(16deg) rotateY(14deg) rotateZ(180deg); }
+            100% { transform: rotateX(22deg) rotateY(-14deg) rotateZ(360deg); }
+        }
+        .vinyl-3d-disc {
+            transform: rotateX(20deg) rotateY(-12deg);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.9), inset 0 0 0 6px #161616, inset 0 0 0 7px #333, inset 0 0 0 16px #111, inset 0 0 0 17px #2a2a2a;
+        }
+        .vinyl-spinning {
+            animation: spin-3d-vinyl 6s linear infinite;
+            box-shadow: 0 28px 60px rgba(29,185,84,0.4), inset 0 0 0 6px #161616, inset 0 0 0 7px #333, inset 0 0 0 16px #111, inset 0 0 0 17px #2a2a2a;
+        }
+
+        .btn-3d {
+            position: relative;
+            transition: all 0.14s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(0);
+            border-top: 1px solid rgba(255, 255, 255, 0.45);
+            border-left: 1px solid rgba(255, 255, 255, 0.2);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-3d:hover { transform: translateY(-3px) scale(1.03); filter: brightness(1.12); }
+        .btn-3d:active { transform: translateY(3px) scale(0.97) !important; }
+
+        .btn-3d-emerald { background: linear-gradient(180deg, #34d399 0%, #1DB954 45%, #059669 100%); box-shadow: 0 5px 0 #064e3b, 0 10px 20px rgba(29, 185, 84, 0.45); color: #000; }
+        .btn-3d-orange { background: linear-gradient(180deg, #fbbf24 0%, #f97316 50%, #ea580c 100%); box-shadow: 0 5px 0 #7c2d12, 0 10px 20px rgba(249, 115, 22, 0.45); color: #000; }
+        .btn-3d-pink { background: linear-gradient(180deg, #f472b6 0%, #ec4899 50%, #db2777 100%); box-shadow: 0 5px 0 #831843, 0 10px 20px rgba(236, 72, 153, 0.45); color: #fff; }
+        .btn-3d-cyan { background: linear-gradient(180deg, #67e8f9 0%, #06b6d4 50%, #0284c7 100%); box-shadow: 0 5px 0 #164e63, 0 10px 20px rgba(6, 182, 212, 0.45); color: #000; }
+        .btn-3d-purple { background: linear-gradient(180deg, #c084fc 0%, #9333ea 50%, #6b21a8 100%); box-shadow: 0 5px 0 #3b0764, 0 10px 20px rgba(147, 51, 234, 0.45); color: #fff; }
+        .btn-3d-amber { background: linear-gradient(180deg, #fde047 0%, #eab308 50%, #ca8a04 100%); box-shadow: 0 5px 0 #713f12, 0 10px 20px rgba(234, 179, 8, 0.45); color: #000; }
+        .btn-3d-rose { background: linear-gradient(180deg, #fda4af 0%, #f43f5e 50%, #be123c 100%); box-shadow: 0 5px 0 #881337, 0 10px 20px rgba(244, 63, 94, 0.45); color: #fff; }
+        .btn-3d-royal { background: linear-gradient(180deg, #60a5fa 0%, #3b82f6 50%, #1d4ed8 100%); box-shadow: 0 5px 0 #1e3a8a, 0 10px 20px rgba(59, 130, 246, 0.45); color: #fff; }
+
+        @keyframes real-dancer-motion {
+            0%, 100% { transform: translateY(0px) rotate(-2deg) scale(1.02); filter: brightness(1); }
+            25% { transform: translateY(-12px) scale(1.08) rotate(3deg); filter: brightness(1.2); }
+            50% { transform: translateY(-3px) scale(1.04) rotate(-3deg); filter: brightness(1.1); }
+            75% { transform: translateY(-14px) scale(1.09) rotate(2deg); filter: brightness(1.25); }
+        }
+        .dancer-live-moving .real-dancer-video-frame {
+            animation: real-dancer-motion var(--beat-speed, 0.5s) ease-in-out infinite;
+            box-shadow: 0 0 55px rgba(236, 72, 153, 0.95), 0 0 90px rgba(56, 189, 248, 0.8);
+        }
+
+        .colorful-app-bg {
+            background: radial-gradient(circle at 15% 20%, #581c87 0%, #311042 35%, #0f172a 75%, #1e1b4b 100%);
+        }
+
+        #welcome-greeting-modal, #welcome-screen {
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .welcome-hidden {
+            opacity: 0 !important;
+            transform: scale(1.12) translateY(-30px) !important;
+            pointer-events: none !important;
+        }
+    </style>
+</head>
+<body class="colorful-app-bg text-white font-sans antialiased overflow-hidden select-none h-screen flex flex-col">
+
+    <!-- INITIAL WELCOME GREETING POPUP OVERLAY -->
+    <div id="welcome-greeting-modal" class="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/85 backdrop-blur-xl">
+        <div class="card-3d relative max-w-lg w-full rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#3b0764]/95 via-[#1e1b4b]/98 to-[#0f172a]/98 border-2 border-pink-400/50 shadow-[0_30px_90px_rgba(0,0,0,0.95)] text-center flex flex-col items-center">
+            
+            <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 p-1 mb-4 shadow-[0_0_30px_rgba(236,72,153,0.8)] animate-bounce">
+                <div class="w-full h-full bg-[#120521] rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-person-dancing text-3xl text-amber-300"></i>
+                </div>
+            </div>
+
+            <span class="px-3 py-1 rounded-full bg-pink-500/20 border border-pink-400/40 text-[11px] font-extrabold text-pink-300 uppercase tracking-widest mb-2">
+                ✨ Namaste & Welcome!
+            </span>
+
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight mb-2 text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">
+                Spotify 3D with Real Live Dancers!
+            </h1>
+
+            <p class="text-xs sm:text-sm text-purple-200/90 leading-relaxed mb-6">
+                Groove to Hindi Superhits and Bhojpuri DJ Beats with real dancers moving dynamically on your stage in full motion.
+            </p>
+
+            <div class="flex items-center justify-center gap-3 w-full">
+                <button onclick="dismissGreetingAndOpenWizard()" class="btn-3d btn-3d-emerald px-8 py-3.5 rounded-full font-black text-sm flex items-center gap-2.5 shadow-2xl">
+                    <i class="fa-solid fa-sparkles"></i>
+                    <span>Enter Welcome Wizard</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MULTI-SLIDE WELCOME WIZARD WITH REAL DANCING VIDEO STAGE -->
+    <div id="welcome-screen" class="welcome-hidden fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 overflow-y-auto" style="background: radial-gradient(circle at 20% 20%, #86198f 0%, #3b0764 40%, #0f172a 85%, #090214 100%);">
+        
+        <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+            <div class="neon-particle absolute top-1/4 left-10 w-4 h-4 bg-pink-500 rounded-full shadow-[0_0_20px_#ec4899]" style="animation-delay: 0s;"></div>
+            <div class="neon-particle absolute top-1/3 right-16 w-5 h-5 bg-cyan-400 rounded-full shadow-[0_0_25px_#22d3ee]" style="animation-delay: 0.8s;"></div>
+            <div class="neon-particle absolute bottom-1/4 left-1/4 w-4 h-4 bg-amber-300 rounded-full shadow-[0_0_20px_#fde047]" style="animation-delay: 1.5s;"></div>
+            <div class="neon-particle absolute top-2/3 right-1/3 w-6 h-6 bg-purple-500 rounded-full shadow-[0_0_30px_#a855f7]" style="animation-delay: 2.1s;"></div>
+        </div>
+
+        <div class="w-96 h-96 bg-pink-500/40 rounded-full blur-3xl pointer-events-none fixed -top-20 -left-20 animate-pulse"></div>
+        <div class="w-[32rem] h-[32rem] bg-cyan-500/35 rounded-full blur-3xl pointer-events-none fixed -bottom-24 -right-20 animate-pulse"></div>
+
+        <div class="card-3d relative max-w-4xl w-full rounded-3xl p-5 sm:p-8 bg-gradient-to-br from-[#2e1065]/95 via-[#1e1b4b]/98 to-[#0f172a]/98 border-2 border-pink-400/40 shadow-[0_30px_90px_rgba(0,0,0,0.95)] backdrop-blur-2xl flex flex-col lg:flex-row items-center gap-7 my-auto z-10">
+            
+            <!-- LEFT WIZARD CONTENT -->
+            <div class="card-3d-inner flex-1 flex flex-col items-center lg:items-start text-center lg:text-left z-10 w-full">
+                
+                <div class="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/10 border border-pink-400/50 text-xs font-extrabold uppercase tracking-widest text-pink-200 mb-3 shadow-xl">
+                    <div class="flex items-end gap-1 h-4">
+                        <span class="w-1 bg-pink-400 rounded-full peak-eq-1"></span>
+                        <span class="w-1 bg-cyan-300 rounded-full peak-eq-2"></span>
+                        <span class="w-1 bg-amber-300 rounded-full peak-eq-3"></span>
+                    </div>
+                    <span id="wizard-step-indicator">Step 1 of 3 • Welcome Wizard</span>
+                </div>
+
+                <!-- SLIDE 1: LANGUAGE & NAME -->
+                <div id="wizard-slide-1" class="wizard-slide w-full flex flex-col">
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-2">
+                        What language do you <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">want to listen to?</span>
+                    </h1>
+                    <p class="text-xs sm:text-sm text-purple-200/90 leading-relaxed mb-4">
+                        Pick your primary musical vibe to set up your customized Spotify 3D stage.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-3 w-full mb-4">
+                        <button type="button" onclick="selectWizardLang('Hindi Hits', this)" class="wizard-lang-btn p-3.5 rounded-2xl border-2 border-pink-400 bg-pink-500/30 text-white font-extrabold text-sm flex flex-col items-center text-center gap-2 shadow-lg transition transform hover:scale-105">
+                            <i class="fa-solid fa-fire text-amber-300 text-xl"></i>
+                            <span>Hindi Superhits</span>
+                        </button>
+                        <button type="button" onclick="selectWizardLang('Bhojpuri Beats', this)" class="wizard-lang-btn p-3.5 rounded-2xl border-2 border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-sm flex flex-col items-center text-center gap-2 transition transform hover:scale-105">
+                            <i class="fa-solid fa-bolt text-cyan-300 text-xl"></i>
+                            <span>Bhojpuri DJ Tadka</span>
+                        </button>
+                    </div>
+
+                    <div class="w-full flex flex-col text-left mb-5">
+                        <label class="text-[11px] font-extrabold uppercase tracking-wider text-pink-300 mb-1 flex items-center gap-1.5">
+                            <i class="fa-solid fa-user-astronaut"></i> Your DJ Name / Profile Name
+                        </label>
+                        <input 
+                            id="wizard-user-name" 
+                            type="text" 
+                            placeholder="Enter your name" 
+                            value="Desi Music Lover"
+                            class="bg-white/10 border border-white/15 rounded-xl px-4 py-2.5 text-xs font-bold text-white placeholder-purple-300/50 outline-none focus:border-spotify-green transition"
+                        >
+                    </div>
+
+                    <div class="flex items-center justify-end w-full">
+                        <button onclick="goToWizardSlide(2)" class="btn-3d btn-3d-emerald px-6 py-3 rounded-full font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl">
+                            <span>Next: Choose Song Type</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SLIDE 2: SONG TYPE / MOOD -->
+                <div id="wizard-slide-2" class="wizard-slide w-full hidden flex-col">
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-2">
+                        What type of song do you <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">want to listen?</span>
+                    </h1>
+                    <p class="text-xs sm:text-sm text-purple-200/90 leading-relaxed mb-4">
+                        Select a specific song mood to trigger the matching real dancer choreography & beats.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-2.5 w-full mb-5">
+                        <button type="button" onclick="selectWizardMood('Romantic Bollywood', this)" class="wizard-mood-btn p-3 rounded-xl border border-pink-400 bg-pink-500/30 text-white font-extrabold text-xs flex flex-col items-center text-center gap-1.5 shadow-lg transition transform hover:scale-105">
+                            <i class="fa-solid fa-heart text-pink-300 text-lg"></i>
+                            <span>Romantic Melody</span>
+                        </button>
+                        <button type="button" onclick="selectWizardMood('Bhojpuri DJ Party', this)" class="wizard-mood-btn p-3 rounded-xl border border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-drum text-amber-300 text-lg"></i>
+                            <span>High Energy Dholak</span>
+                        </button>
+                        <button type="button" onclick="selectWizardMood('Sad Melodies', this)" class="wizard-mood-btn p-3 rounded-xl border border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-cloud-rain text-cyan-300 text-lg"></i>
+                            <span>Sad / Soulful</span>
+                        </button>
+                        <button type="button" onclick="selectWizardMood('Lofi Chill', this)" class="wizard-mood-btn p-3 rounded-xl border border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-1.5 transition transform hover:scale-105">
+                            <i class="fa-solid fa-couch text-emerald-300 text-lg"></i>
+                            <span>Lofi Chill 3D</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between w-full">
+                        <button onclick="goToWizardSlide(1)" class="btn-3d btn-3d-purple px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <button onclick="goToWizardSlide(3)" class="btn-3d btn-3d-emerald px-6 py-3 rounded-full font-black text-xs sm:text-sm flex items-center gap-2 shadow-xl">
+                            <span>Next: Sound Engine</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SLIDE 3: SOUND PRESET & LAUNCH -->
+                <div id="wizard-slide-3" class="wizard-slide w-full hidden flex-col">
+                    <h1 class="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-2">
+                        Ready to <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300">start the music?</span>
+                    </h1>
+                    <p class="text-xs sm:text-sm text-purple-200/90 leading-relaxed mb-4">
+                        Choose your 3D Audio Preset and launch the stage where real dancers move in real time!
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-3 w-full mb-5">
+                        <button type="button" onclick="selectWizardSound('DJ Bass Boost', this)" class="wizard-sound-btn p-3.5 rounded-2xl border-2 border-pink-400 bg-pink-500/30 text-white font-extrabold text-xs flex flex-col items-center text-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-compact-disc text-amber-300 text-xl"></i>
+                            <span>DJ Bass Boost</span>
+                        </button>
+                        <button type="button" onclick="selectWizardSound('Dholak Party', this)" class="wizard-sound-btn p-3.5 rounded-2xl border-2 border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-2">
+                            <i class="fa-solid fa-drum text-cyan-300 text-xl"></i>
+                            <span>Desi Dholak 3D</span>
+                        </button>
+                    </div>
+
+                    <div class="flex items-center justify-between w-full">
+                        <button onclick="goToWizardSlide(2)" class="btn-3d btn-3d-purple px-5 py-2.5 rounded-full font-bold text-xs flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-left"></i>
+                            <span>Back</span>
+                        </button>
+                        <button onclick="completeWizardAndPlay()" class="btn-3d btn-3d-emerald px-7 py-3.5 rounded-full font-black text-sm flex items-center gap-2.5 shadow-2xl animate-pulse">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Launch Spotify 3D Player</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- RIGHT REAL DANCING STAGE PREVIEW -->
+            <div class="card-3d-inner flex flex-col items-center justify-center relative z-10">
+                <div class="relative w-64 sm:w-72 rounded-2xl p-4 bg-gradient-to-b from-sky-900/90 via-indigo-950/95 to-purple-950/95 border-2 border-pink-400/80 shadow-[0_20px_50px_rgba(236,72,153,0.5)] flex flex-col items-center dancer-live-moving">
+                    
+                    <div class="w-full flex items-center justify-between mb-2.5 px-1">
+                        <span class="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shadow">
+                            <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                            REAL DANCE STAGE
+                        </span>
+                        <span id="wizard-live-bpm" class="text-[10px] font-extrabold text-cyan-300">138 BPM • Peak Live</span>
+                    </div>
+
+                    <div class="real-dancer-video-frame relative w-full h-56 rounded-xl overflow-hidden border-2 border-pink-400 mb-3 bg-gradient-to-b from-sky-900 to-indigo-950">
+                        <!-- Embedded High-Energy Real Dancer Motion GIF/Video Feed -->
+                        <img 
+                            id="wizard-dancer-img"
+                            src="https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=600&q=80" 
+                            alt="Real Dancer in Motion"
+                            class="w-full h-full object-cover object-center"
+                        >
+                        <div class="inset-0 bg-gradient-to-t from-indigo-950/90 via-transparent to-transparent absolute"></div>
+                        
+                        <div class="bottom-3 inset-x-3 flex items-end justify-center gap-1.5 absolute pointer-events-none">
+                            <span class="w-2 bg-pink-400 rounded-full peak-eq-1"></span>
+                            <span class="w-2 bg-cyan-300 rounded-full peak-eq-2"></span>
+                            <span class="w-2 bg-amber-300 rounded-full peak-eq-3"></span>
+                            <span class="w-2 bg-emerald-400 rounded-full peak-eq-2"></span>
+                            <span class="w-2 bg-purple-400 rounded-full peak-eq-1"></span>
+                        </div>
+
+                        <div class="top-2 right-2 absolute">
+                            <button onclick="cycleWizardDancerPose()" title="Switch Real Dancer" class="btn-3d btn-3d-amber w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+                                <i class="fa-solid fa-shuffle text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-center w-full">
+                        <p id="wizard-preview-desc" class="text-xs font-extrabold text-pink-200">💃 Real Dancer is grooving in live motion!</p>
+                        <span class="text-[10px] text-sky-300">Click shuffle icon to change dancer</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- UPPER WORKSPACE -->
+    <div class="flex flex-1 overflow-hidden p-2 gap-2.5 pb-0">
+        <!-- LEFT SIDEBAR -->
+        <aside class="w-64 md:w-72 flex-shrink-0 flex flex-col gap-2.5 h-full hidden sm:flex">
+            <div class="bg-gradient-to-br from-[#2e1065]/90 via-[#1e1b4b]/90 to-[#3b0764]/90 backdrop-blur-xl panel-3d rounded-xl p-3.5 flex flex-col gap-2.5">
+                <a href="#" onclick="switchView('home'); return false;" class="flex items-center gap-3 px-2 py-1 text-white font-bold text-lg tracking-tight mb-0.5">
+                    <i class="fa-brands fa-spotify text-3xl text-spotify-green drop-shadow-[0_0_10px_rgba(29,185,84,0.6)]"></i>
+                    <span>Spotify <span class="text-[10px] bg-pink-500/30 text-pink-200 border border-pink-400/50 px-1.5 py-0.5 rounded ml-1 uppercase font-extrabold">Peak 3D</span></span>
+                </a>
+                <button id="nav-home" onclick="switchView('home')" class="btn-3d btn-3d-emerald flex items-center gap-4 px-4 py-2.5 rounded-xl font-extrabold transition group">
+                    <i class="fa-solid fa-house text-lg w-6 text-center drop-shadow"></i>
+                    <span class="text-sm">3D Home Stage</span>
+                </button>
+                <button id="nav-search" onclick="focusSearch()" class="btn-3d btn-3d-purple flex items-center gap-4 px-4 py-2.5 rounded-xl font-extrabold transition group">
+                    <i class="fa-solid fa-magnifying-glass text-lg w-6 text-center drop-shadow"></i>
+                    <span class="text-sm">Search Hindi & Bhojpuri</span>
+                </button>
+            </div>
+
+            <div class="bg-gradient-to-b from-[#2e1065]/85 via-[#1e1b4b]/90 to-[#111827]/95 backdrop-blur-xl panel-3d rounded-xl flex-1 flex flex-col overflow-hidden">
+                <div class="p-4 pb-2 flex items-center justify-between text-spotify-subdued">
+                    <button onclick="switchView('home')" class="btn-3d btn-3d-royal px-3.5 py-1.5 rounded-xl flex items-center gap-2.5 font-extrabold text-xs">
+                        <i class="fa-solid fa-compact-disc text-sm"></i>
+                        <span>Your 3D Library</span>
+                    </button>
+                    <button onclick="showToast('Created a new Peak Mix playlist!')" title="Create playlist" class="btn-3d btn-3d-amber w-8 h-8 rounded-full flex items-center justify-center font-bold">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+
+                <div class="px-4 py-2.5 flex gap-2 overflow-x-auto no-scrollbar">
+                    <button onclick="switchView('home')" class="btn-3d btn-3d-cyan px-3.5 py-1 text-xs font-extrabold rounded-full whitespace-nowrap">All</button>
+                    <button onclick="filterByTag('Hindi Hits')" class="btn-3d btn-3d-orange px-3.5 py-1 text-xs font-extrabold rounded-full whitespace-nowrap">Hindi</button>
+                    <button onclick="filterByTag('Bhojpuri Beats')" class="btn-3d btn-3d-pink px-3.5 py-1 text-xs font-extrabold rounded-full whitespace-nowrap">Bhojpuri</button>
+                    <button onclick="switchView('liked')" class="btn-3d btn-3d-rose px-3.5 py-1 text-xs font-extrabold rounded-full whitespace-nowrap">Liked</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-2 py-1 space-y-1" id="sidebar-playlists"></div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT AREA -->
+        <main id="main-scroll-area" class="flex-1 panel-3d rounded-xl overflow-y-auto relative flex flex-col" style="background: linear-gradient(135deg, #701a75 0%, #311042 45%, #0f172a 100%);">
+            
+            <header class="sticky top-0 z-30 px-4 md:px-6 py-3 flex items-center justify-between gap-4 bg-[#240b36]/80 backdrop-blur-xl border-b border-pink-400/20">
+                <div class="flex items-center gap-2.5 flex-1 max-w-md">
+                    <div class="hidden md:flex items-center gap-2">
+                        <button onclick="switchView('home')" title="Home" class="btn-3d btn-3d-cyan w-9 h-9 rounded-full flex items-center justify-center">
+                            <i class="fa-solid fa-chevron-left text-sm"></i>
+                        </button>
+                    </div>
+                    <div class="relative flex-1">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-spotify-subdued text-sm pointer-events-none"></i>
+                        <input 
+                            type="text" 
+                            id="search-input" 
+                            placeholder="Search Hindi, Bhojpuri, Arijit, Pawan..." 
+                            class="w-full bg-[#242424] hover:bg-[#2a2a2a] focus:bg-[#242424] text-white text-sm rounded-full pl-10 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-spotify-green transition placeholder-spotify-subdued shadow-inner"
+                        >
+                        <button id="clear-search" onclick="clearSearch()" class="hidden btn-3d btn-3d-rose w-6 h-6 rounded-full absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center text-xs">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <button onclick="filterByTag('Hindi Hits')" class="hidden sm:flex items-center gap-1.5 btn-3d btn-3d-orange font-extrabold text-xs px-4 py-2 rounded-full">
+                        <i class="fa-solid fa-fire"></i>
+                        <span>Hindi Hits</span>
+                    </button>
+                    <button onclick="filterByTag('Bhojpuri Beats')" class="hidden sm:flex items-center gap-1.5 btn-3d btn-3d-pink font-extrabold text-xs px-4 py-2 rounded-full">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Bhojpuri Tadka</span>
+                    </button>
+                    <button onclick="showWelcomeScreen()" title="Open Welcome Wizard" class="btn-3d btn-3d-amber font-extrabold text-xs px-3.5 py-2 rounded-full flex items-center gap-1.5">
+                        <i class="fa-solid fa-door-open"></i>
+                        <span class="hidden md:inline">Welcome Wizard</span>
+                    </button>
+                    <div onclick="showToast('Namaste! Logged in as ' + (state.userName || 'Desi Music Lover'))" class="btn-3d btn-3d-royal flex items-center gap-2 p-1 pr-3.5 rounded-full cursor-pointer">
+                        <div id="profile-initials-badge" class="w-7 h-7 rounded-full bg-amber-400 flex items-center justify-center text-black font-black text-xs shadow">IN</div>
+                        <span id="profile-name-label" class="text-xs font-extrabold hidden md:inline">Desi Mix</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="px-4 md:px-6 py-5 flex-1 flex flex-col gap-8">
+
+                <!-- 3D HERO STAGE WITH REAL LIVE DANCER -->
+                <div class="scene-3d">
+                    <div id="hero-3d-stage" onmousemove="tiltElement(event, this)" onmouseleave="resetTilt(this)" class="card-3d relative rounded-2xl p-5 md:p-6 bg-gradient-to-r from-fuchsia-900/90 via-indigo-900/90 to-cyan-900/90 border border-pink-400/30 overflow-hidden flex flex-col lg:flex-row items-center justify-between gap-6">
+                        <div class="-top-20 -left-20 w-60 h-60 bg-pink-500/30 rounded-full blur-3xl pointer-events-none absolute"></div>
+                        <div class="-bottom-20 -right-20 w-60 h-60 bg-cyan-400/30 rounded-full blur-3xl pointer-events-none absolute"></div>
+
+                        <div class="card-3d-inner z-10 flex flex-col items-center lg:items-start text-center lg:text-left max-w-md">
+                            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 border border-pink-400/40 text-[11px] font-bold uppercase tracking-widest text-pink-300 mb-3 shadow">
+                                <i class="fa-solid fa-person-dancing text-cyan-400"></i>
+                                <span id="hero-badge-lang">Real Dancer Motion Stage</span>
+                            </div>
+                            <h1 id="hero-title" class="text-2xl sm:text-4xl font-black tracking-tight text-white drop-shadow-md mb-1">Kesariya Tera Ishq</h1>
+                            <p id="hero-artist" class="text-sm sm:text-base text-pink-200 font-medium mb-4">Arijit Singh • Bollywood Melody</p>
+                            
+                            <div class="flex flex-wrap items-center justify-center lg:justify-start gap-3">
+                                <button onclick="togglePlayPause()" class="btn-3d btn-3d-emerald flex items-center gap-2.5 font-extrabold text-sm px-6 py-3 rounded-full">
+                                    <i id="hero-play-icon" class="fa-solid fa-play"></i>
+                                    <span id="hero-play-text">Play & Dance</span>
+                                </button>
+                                <button onclick="cycleMainDancerPose()" class="btn-3d btn-3d-cyan px-5 py-3 rounded-full text-xs font-extrabold flex items-center gap-1.5">
+                                    <i class="fa-solid fa-shuffle"></i>
+                                    <span>Switch Dancer</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Real Live Dancer Stage -->
+                        <div id="ai-dancer-stage" onclick="togglePlayPause()" title="Click to make Real Dancers move!" class="card-3d-inner z-10 flex flex-col items-center justify-center cursor-pointer group relative px-4">
+                            <div class="relative w-48 h-56 flex items-center justify-center">
+                                <div class="absolute -bottom-1 w-44 h-10 rounded-full bg-gradient-to-r from-pink-500/40 via-sky-400/50 to-purple-500/40 border-2 border-pink-300/80 blur-[1px] shadow-[0_0_35px_rgba(236,72,153,0.95)]"></div>
+                                
+                                <div id="real-dancer-card" class="real-dancer-video-frame relative w-40 h-48 rounded-2xl overflow-hidden border-2 border-pink-300/80 shadow-[0_14px_30px_rgba(0,0,0,0.8)] bg-gradient-to-b from-sky-900 to-indigo-950 transition-all duration-300">
+                                    <img 
+                                        id="main-real-dancer-img"
+                                        src="https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=600&q=80" 
+                                        alt="Real Live Dancer in Motion"
+                                        class="w-full h-full object-cover object-center group-hover:scale-110 transition duration-500"
+                                    >
+                                    <div class="inset-0 bg-gradient-to-t from-indigo-950/85 via-pink-500/15 to-transparent pointer-events-none absolute"></div>
+                                    <div class="top-2 left-2 px-2 py-0.5 rounded-full bg-rose-600/90 text-white text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow absolute">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                                        <span>LIVE MOTION</span>
+                                    </div>
+                                    <div class="bottom-2 inset-x-3 h-7 flex items-end justify-center gap-1 pointer-events-none absolute">
+                                        <span class="w-1.5 bg-sky-300 rounded-full peak-eq-1"></span>
+                                        <span class="w-1.5 bg-pink-400 rounded-full peak-eq-2"></span>
+                                        <span class="w-1.5 bg-amber-300 rounded-full peak-eq-3"></span>
+                                        <span class="w-1.5 bg-emerald-300 rounded-full peak-eq-2"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <span id="dancer-status-pill" class="mt-1 px-3 py-0.5 rounded-full bg-pink-500/30 border border-pink-300/50 text-[10px] font-extrabold text-pink-100 tracking-wide uppercase shadow">
+                                💃 Real Live Dancer Grooving
+                            </span>
+                        </div>
+
+                        <!-- Vinyl Turntable -->
+                        <div class="card-3d-inner z-10 flex items-center justify-center pr-2 lg:pr-4">
+                            <div class="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+                                <div id="vinyl-disc" onclick="togglePlayPause()" class="vinyl-3d-disc w-full h-full rounded-full bg-[#0b0b0b] flex items-center justify-center cursor-pointer relative">
+                                    <img id="hero-vinyl-cover" src="" alt="Vinyl Cover" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-4 border-black shadow-inner">
+                                    <div class="w-3.5 h-3.5 rounded-full bg-black border border-white/30 absolute"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HOME DASHBOARD SECTIONS -->
+                <div id="home-sections" class="space-y-8">
+                    <section>
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 id="greeting-title" class="text-xl md:text-2xl font-bold tracking-tight">Good afternoon</h2>
+                            <span class="text-xs text-spotify-subdued hidden sm:inline"><i class="fa-solid fa-hand-pointer mr-1 text-spotify-green"></i>Hover cards for 3D depth</span>
+                        </div>
+                        <div id="quick-access-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+                    </section>
+
+                    <section>
+                        <div class="flex items-end justify-between mb-4">
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-bold tracking-tight">Hindi & Bhojpuri Superstars</h2>
+                                <p class="text-xs text-spotify-subdued">Touch any singer photo to open their exclusive playlist</p>
+                            </div>
+                            <span class="text-xs font-bold text-spotify-green bg-spotify-green/10 border border-spotify-green/30 px-2.5 py-1 rounded-full">Tap Artist</span>
+                        </div>
+                        <div id="superstars-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 scene-3d"></div>
+                    </section>
+
+                    <section>
+                        <div class="flex items-end justify-between mb-4">
+                            <div>
+                                <h2 class="text-xl md:text-2xl font-bold tracking-tight">Desi Superhits: Hindi & Bhojpuri Peak 3D</h2>
+                                <p class="text-xs text-spotify-subdued">Bollywood Romance, Bhojpuri DJ Beats & Peak Synth</p>
+                            </div>
+                            <button onclick="switchView('all-tracks')" class="btn-3d btn-3d-amber px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider">Show all</button>
+                        </div>
+                        <div id="featured-cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 scene-3d"></div>
+                    </section>
+                </div>
+
+                <!-- PLAYLIST BANNER -->
+                <div id="playlist-banner" class="hidden flex-col md:flex-row items-center md:items-end gap-6 pt-2 pb-4 border-b border-white/10">
+                    <div id="banner-cover" class="w-40 h-40 md:w-48 md:h-48 rounded-lg shadow-2xl flex items-center justify-center text-5xl flex-shrink-0 bg-gradient-to-br from-indigo-600 to-purple-400">
+                        <i class="fa-solid fa-heart text-white"></i>
+                    </div>
+                    <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                        <span id="banner-type" class="text-xs font-bold uppercase tracking-wider">Playlist</span>
+                        <h1 id="banner-title" class="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight my-2">Liked Songs</h1>
+                        <p id="banner-desc" class="text-spotify-subdued text-sm max-w-xl mb-2">Your personal collection of favorite synthesized tracks.</p>
+                        <div class="flex items-center gap-2 text-xs text-white font-medium">
+                            <i class="fa-brands fa-spotify text-spotify-green text-base"></i>
+                            <span class="font-bold">Spotify</span>
+                            <span>•</span>
+                            <span id="banner-count">12 songs</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TRACKLIST SECTION -->
+                <section class="flex-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-4">
+                            <button onclick="playCurrentViewList()" class="btn-3d btn-3d-emerald w-12 h-12 rounded-full flex items-center justify-center">
+                                <i class="fa-solid fa-play text-lg ml-0.5"></i>
+                            </button>
+                            <div>
+                                <h2 id="tracklist-heading" class="text-xl font-bold tracking-tight">Popular Tracks</h2>
+                                <p id="tracklist-subheading" class="text-xs text-spotify-subdued">Click any song row to stream peak-level Web Audio tracks</p>
+                            </div>
+                        </div>
+
+                        <div id="active-filter-badge" class="hidden items-center gap-2 bg-spotify-highlight px-3 py-1.5 rounded-full text-xs">
+                            <span id="filter-badge-text" class="font-bold text-white">Filtered</span>
+                            <button onclick="switchView('home')" class="btn-3d btn-3d-rose w-6 h-6 rounded-full flex items-center justify-center text-xs"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-[36px_1fr_auto] md:grid-cols-[40px_1.5fr_1fr_auto] gap-4 px-4 py-2 border-b border-white/10 text-spotify-subdued text-xs font-semibold uppercase tracking-wider mb-2">
+                        <div class="text-center">#</div>
+                        <div>Title</div>
+                        <div class="hidden md:block">Album</div>
+                        <div class="flex items-center gap-6 pr-2">
+                            <span class="w-5"></span>
+                            <i class="fa-regular fa-clock text-sm" title="Duration"></i>
+                        </div>
+                    </div>
+
+                    <div id="tracklist-container" class="space-y-0.5 pb-8"></div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- PERSISTENT BOTTOM MUSIC PLAYER BAR -->
+    <footer class="h-[90px] bg-gradient-to-r from-[#1a062b] via-[#2b0938] to-[#0f172a] px-4 flex items-center justify-between gap-4 z-40 border-t border-pink-400/25 shadow-[0_-10px_25px_rgba(0,0,0,0.6)]">
+        <div class="flex items-center gap-3.5 w-[30%] min-w-[180px]">
+            <div class="relative group flex-shrink-0">
+                <img id="player-cover" src="" alt="Cover" class="w-14 h-14 rounded-md object-cover shadow-md bg-spotify-elevated">
+                <div id="live-audio-badge" class="hidden absolute -top-1 -right-1 w-3 h-3 bg-spotify-green rounded-full ring-2 ring-black animate-ping"></div>
+            </div>
+            <div class="overflow-hidden">
+                <div id="player-title" class="text-sm font-semibold text-white truncate hover:underline cursor-pointer">Select a track</div>
+                <div id="player-artist" class="text-xs text-spotify-subdued truncate hover:underline hover:text-white cursor-pointer">Artist</div>
+            </div>
+            <button id="player-like-btn" onclick="toggleCurrentTrackLike()" title="Save to Your Library" class="btn-3d btn-3d-rose w-9 h-9 rounded-full flex items-center justify-center ml-1 flex-shrink-0">
+                <i class="fa-regular fa-heart text-sm"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col items-center max-w-[45%] w-full gap-2">
+            <div class="flex items-center gap-3 sm:gap-4">
+                <button id="btn-shuffle" onclick="toggleShuffle()" title="Enable shuffle" class="btn-3d btn-3d-purple w-9 h-9 rounded-full flex items-center justify-center text-xs relative">
+                    <i class="fa-solid fa-shuffle"></i>
+                    <span id="shuffle-dot" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+                </button>
+                <button onclick="prevTrack()" title="Previous" class="btn-3d btn-3d-cyan w-9 h-9 rounded-full flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <button id="btn-play-pause" onclick="togglePlayPause()" title="Play" class="btn-3d btn-3d-emerald w-11 h-11 rounded-full flex items-center justify-center">
+                    <i id="play-pause-icon" class="fa-solid fa-play text-base ml-0.5"></i>
+                </button>
+                <button onclick="nextTrack()" title="Next" class="btn-3d btn-3d-amber w-9 h-9 rounded-full flex items-center justify-center text-sm">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+                <button id="btn-repeat" onclick="toggleRepeat()" title="Enable repeat" class="btn-3d btn-3d-pink w-9 h-9 rounded-full flex items-center justify-center text-xs relative">
+                    <i class="fa-solid fa-repeat"></i>
+                    <span id="repeat-dot" class="hidden absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-300"></span>
+                </button>
+            </div>
+
+            <div class="w-full max-w-md flex items-center gap-2 slider-group">
+                <span id="current-time" class="text-[11px] text-spotify-subdued w-9 text-right font-mono">0:00</span>
+                <div class="relative flex-1 flex items-center">
+                    <input type="range" id="seek-slider" min="0" max="100" value="0" step="0.1" class="spotify-slider z-10">
+                </div>
+                <span id="total-duration" class="text-[11px] text-spotify-subdued w-9 font-mono">0:00</span>
+            </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 w-[30%] min-w-[140px]">
+            <span class="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-spotify-highlight text-[10px] font-bold text-spotify-green border border-spotify-green/30">
+                <i class="fa-solid fa-microchip"></i> Peak 3D
+            </span>
+            <button onclick="switchView('liked')" title="Liked Songs Queue" class="btn-3d btn-3d-royal w-9 h-9 rounded-full items-center justify-center text-xs hidden sm:flex">
+                <i class="fa-solid fa-list-ul"></i>
+            </button>
+            <div class="flex items-center gap-2.5 w-28 sm:w-36 slider-group">
+                <button id="btn-mute" onclick="toggleMute()" title="Mute" class="btn-3d btn-3d-orange w-9 h-9 rounded-full flex items-center justify-center text-xs flex-shrink-0">
+                    <i id="volume-icon" class="fa-solid fa-volume-high"></i>
+                </button>
+                <input type="range" id="volume-slider" min="0" max="100" value="80" class="spotify-slider">
+            </div>
+        </div>
+    </footer>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast" class="fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#2e77d0] text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-2xl opacity-0 pointer-events-none transition-all duration-300 z-50 flex items-center gap-2">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="toast-msg">Added to Liked Songs</span>
+    </div>
+
+    <script>
+        function createAlbumArt(c1, c2, badgeText, label) {
+            const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+                <defs>
+                    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="${c1}"/>
+                        <stop offset="100%" stop-color="${c2}"/>
+                    </linearGradient>
+                    <radialGradient id="shine" cx="30%" cy="25%" r="60%">
+                        <stop offset="0%" stop-color="rgba(255,255,255,0.35)"/>
+                        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                    </radialGradient>
+                </defs>
+                <rect width="300" height="300" fill="url(#g)"/>
+                <circle cx="150" cy="150" r="115" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="14"/>
+                <circle cx="150" cy="150" r="75" fill="rgba(0,0,0,0.25)"/>
+                <rect width="300" height="300" fill="url(#shine)"/>
+                <rect x="22" y="22" width="96" height="26" rx="13" fill="rgba(0,0,0,0.65)"/>
+                <text x="70" y="39" text-anchor="middle" fill="#1DB954" font-family="Inter, sans-serif" font-weight="800" font-size="11" letter-spacing="1">${badgeText}</text>
+                <text x="24" y="266" fill="#ffffff" font-family="Inter, sans-serif" font-weight="900" font-size="25" letter-spacing="-0.5">${label}</text>
+            </svg>`;
+            return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+        }
+
+        function tiltElement(event, el) {
+            const rect = el.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -8;
+            const rotateY = ((x - centerX) / centerX) * 8;
+            el.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+        }
+
+        function resetTilt(el) {
+            el.style.transform = `perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        }
+
+        const tracks = [
+            { id: 1, title: "Kesariya Tera Ishq", artist: "Arijit Singh, Pritam", album: "Brahmastra (Hindi)", language: "Hindi", duration: 198, liked: true, playlist: "Hindi Hits", color1: "#f97316", color2: "#b91c1c", cover: createAlbumArt("#f97316", "#b91c1c", "HINDI HIT", "KESARIYA"), bpm: 94, wave: "triangle", percussionStyle: "tabla", notes: [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66], bass: [130.81, 130.81, 98.00, 110.00] },
+            { id: 2, title: "Lollipop Lagelu (DJ 3D Bass)", artist: "Pawan Singh", album: "Bhojpuri Forever", language: "Bhojpuri", duration: 184, liked: true, playlist: "Bhojpuri Beats", color1: "#ec4899", color2: "#7e22ce", cover: createAlbumArt("#ec4899", "#7e22ce", "BHOJPURI", "LOLLIPOP"), bpm: 138, wave: "sawtooth", percussionStyle: "dholak", notes: [293.66, 349.23, 392.00, 440.00, 392.00, 349.23, 329.63, 293.66], bass: [73.42, 146.83, 87.31, 98.00] },
+            { id: 3, title: "Apna Bana Le Piya", artist: "Arijit Singh, Sachin-Jigar", album: "Bhediya (Hindi)", language: "Hindi", duration: 212, liked: true, playlist: "Hindi Hits", color1: "#0ea5e9", color2: "#1e3a8a", cover: createAlbumArt("#0ea5e9", "#1e3a8a", "BOLLYWOOD", "APNA BANA"), bpm: 90, wave: "sine", percussionStyle: "tabla", notes: [329.63, 369.99, 440.00, 493.88, 440.00, 369.99, 329.63, 277.18], bass: [82.41, 110.00, 92.50, 123.47] },
+            { id: 4, title: "Raja Ji Ke Dilwa Tutal", artist: "Pawan Singh, Shivani Singh", album: "Desi Tadka 2026", language: "Bhojpuri", duration: 175, liked: true, playlist: "Bhojpuri Beats", color1: "#e11d48", color2: "#f59e0b", cover: createAlbumArt("#e11d48", "#f59e0b", "BHOJPURI", "RAJA JI"), bpm: 134, wave: "square", percussionStyle: "dholak", notes: [329.63, 392.00, 440.00, 523.25, 493.88, 440.00, 392.00, 329.63], bass: [82.41, 164.81, 98.00, 110.00] },
+            { id: 5, title: "Tauba Tauba (Desi Groove)", artist: "Karan Aujla", album: "Bad Newz (Hindi)", language: "Hindi", duration: 188, liked: false, playlist: "Hindi Hits", color1: "#eab308", color2: "#713f12", cover: createAlbumArt("#eab308", "#713f12", "HINDI POP", "TAUBA"), bpm: 122, wave: "sawtooth", percussionStyle: "dholak", notes: [246.94, 293.66, 329.63, 369.99, 329.63, 293.66, 246.94, 220.00], bass: [61.74, 123.47, 73.42, 82.41] },
+            { id: 6, title: "Thik Hai (Nun Roti Khayenge)", artist: "Khesari Lal Yadav", album: "Purvanchal Beats", language: "Bhojpuri", duration: 194, liked: true, playlist: "Bhojpuri Beats", color1: "#9333ea", color2: "#be185d", cover: createAlbumArt("#9333ea", "#be185d", "BHOJPURI", "THIK HAI"), bpm: 136, wave: "sawtooth", percussionStyle: "dholak", notes: [261.63, 329.63, 392.00, 440.00, 523.25, 440.00, 392.00, 329.63], bass: [65.41, 130.81, 87.31, 98.00] },
+            { id: 7, title: "Midnight Horizon", artist: "Synthwave Collective", album: "Neon Odyssey", language: "English", duration: 164, liked: false, playlist: "Chill Vibes", color1: "#4f46e5", color2: "#ec4899", cover: createAlbumArt("#4f46e5", "#ec4899", "SYNTH 3D", "HORIZON"), bpm: 108, wave: "sawtooth", percussionStyle: "standard", notes: [220.00, 261.63, 329.63, 392.00, 329.63, 261.63, 246.94, 196.00], bass: [110.00, 110.00, 87.31, 98.00] }
+        ];
+
+        const superstars = [
+            { id: 'Arijit Singh', name: 'Arijit Singh', role: 'Bollywood Melody King', language: 'Hindi', color1: '#f97316', color2: '#7c2d12', photo: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=600&q=80' },
+            { id: 'Pawan Singh', name: 'Pawan Singh', role: 'Bhojpuri Power Star', language: 'Bhojpuri', color1: '#ec4899', color2: '#581c87', photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80' },
+            { id: 'Khesari Lal Yadav', name: 'Khesari Lal Yadav', role: 'Bhojpuri Hit Machine', language: 'Bhojpuri', color1: '#a855f7', color2: '#3b0764', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80' },
+            { id: 'Shilpi Raj', name: 'Shilpi Raj', role: 'Bhojpuri Queen Voice', language: 'Bhojpuri', color1: '#f43f5e', color2: '#881337', photo: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=600&q=80' },
+            { id: 'Manoj Tiwari', name: 'Manoj Tiwari', role: 'Purvanchal Legend', language: 'Bhojpuri', color1: '#eab308', color2: '#713f12', photo: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80' },
+            { id: 'Badshah', name: 'Badshah & Karan', role: 'Hindi Party & Rap', language: 'Hindi', color1: '#0ea5e9', color2: '#1e3a8a', photo: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=600&q=80', fallbackPhoto: 'https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80' }
+        ];
+
+        const playlists = [
+            { id: 'liked', name: 'Liked Songs', desc: 'Your personal collection of favorite Hindi, Bhojpuri & Synth tracks.', icon: 'fa-heart', color1: '#450af5', color2: '#8e8ee5', isSystem: true },
+            { id: 'Hindi Hits', name: 'Hindi Superhits', desc: 'Top Bollywood romantic melodies & dance chartbusters.', icon: 'fa-fire-flame-curved', color1: '#f97316', color2: '#b91c1c' },
+            { id: 'Bhojpuri Beats', name: 'Bhojpuri DJ Beats', desc: 'High-voltage Bhojpuri hits.', icon: 'fa-bolt', color1: '#ec4899', color2: '#7e22ce' },
+            { id: 'Chill Vibes', name: 'Chill Vibes 3D', desc: 'Kick back with warm analog pads.', icon: 'fa-couch', color1: '#4f46e5', color2: '#ec4899' }
+        ];
+
+        let state = {
+            currentTrackIndex: 0,
+            isPlaying: false,
+            isShuffle: false,
+            isRepeat: false,
+            isMuted: false,
+            volume: 0.8,
+            currentTime: 0,
+            activeView: 'home',
+            searchQuery: '',
+            displayedTracks: [...tracks],
+            userName: 'Desi Music Lover',
+            soundPreset: 'DJ Bass Boost',
+            wizardLang: 'Hindi Hits',
+            wizardMood: 'Romantic Bollywood',
+            wizardStep: 1
+        };
+
+        let audioCtx = null;
+        let masterGain = null;
+        let stepTimer = null;
+        let progressTimer = null;
+        let stepIndex = 0;
+
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+                masterGain = audioCtx.createGain();
+                masterGain.gain.value = state.isMuted ? 0 : state.volume * 0.35;
+                masterGain.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function triggerSynthStep(track, step) {
+            if (!audioCtx || !state.isPlaying) return;
+            const now = audioCtx.currentTime;
+            const stepDuration = 60 / track.bpm / 2;
+
+            const noteFreq = track.notes[step % track.notes.length];
+            const osc = audioCtx.createOscillator();
+            const noteGain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1400 + (step % 4) * 350, now);
+
+            osc.type = track.wave;
+            osc.frequency.setValueAtTime(noteFreq, now);
+            noteGain.gain.setValueAtTime(0.001, now);
+            noteGain.gain.exponentialRampToValueAtTime(0.22, now + 0.02);
+            noteGain.gain.exponentialRampToValueAtTime(0.001, now + stepDuration * 0.9);
+
+            osc.connect(filter);
+            filter.connect(noteGain);
+            noteGain.connect(masterGain);
+            osc.start(now);
+            osc.stop(now + stepDuration);
+
+            if (step % 2 === 0) {
+                const bassFreq = track.bass[(step / 2) % track.bass.length];
+                const bassOsc = audioCtx.createOscillator();
+                const bassGain = audioCtx.createGain();
+                bassOsc.type = 'triangle';
+                bassOsc.frequency.setValueAtTime(bassFreq, now);
+                bassGain.gain.setValueAtTime(0.001, now);
+                bassGain.gain.exponentialRampToValueAtTime(0.32, now + 0.02);
+                bassGain.gain.exponentialRampToValueAtTime(0.001, now + stepDuration * 1.8);
+                bassOsc.connect(bassGain);
+                bassGain.connect(masterGain);
+                bassOsc.start(now);
+                bassOsc.stop(now + stepDuration * 1.9);
+            }
+
+            if (step % 4 === 0) {
+                const kickOsc = audioCtx.createOscillator();
+                const kickGain = audioCtx.createGain();
+                kickOsc.type = 'sine';
+                kickOsc.frequency.setValueAtTime(135, now);
+                kickOsc.frequency.exponentialRampToValueAtTime(38, now + 0.12);
+                kickGain.gain.setValueAtTime(0.45, now);
+                kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                kickOsc.connect(kickGain);
+                kickGain.connect(masterGain);
+                kickOsc.start(now);
+                kickOsc.stop(now + 0.16);
+            }
+        }
+
+        function startAudioScheduler() {
+            stopAudioScheduler();
+            initAudioContext();
+            const currentTrack = tracks[state.currentTrackIndex];
+            const stepMs = (60 / currentTrack.bpm / 2) * 1000;
+            triggerSynthStep(currentTrack, stepIndex++);
+
+            stepTimer = setInterval(() => {
+                if (state.isPlaying) {
+                    const trk = tracks[state.currentTrackIndex];
+                    triggerSynthStep(trk, stepIndex++);
+                }
+            }, stepMs);
+
+            progressTimer = setInterval(() => {
+                if (state.isPlaying) {
+                    const trk = tracks[state.currentTrackIndex];
+                    state.currentTime += 0.25;
+                    if (state.currentTime >= trk.duration) {
+                        nextTrack();
+                    } else {
+                        updateSeekUI();
+                    }
+                }
+            }, 250);
+        }
+
+        function stopAudioScheduler() {
+            if (stepTimer) clearInterval(stepTimer);
+            if (progressTimer) clearInterval(progressTimer);
+            stepTimer = null;
+            progressTimer = null;
+        }
+
+        function formatTime(seconds) {
+            const s = Math.floor(seconds);
+            const mins = Math.floor(s / 60);
+            const secs = s % 60;
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function setGreeting() {
+            const hour = new Date().getHours();
+            const greetingEl = document.getElementById('greeting-title');
+            if (hour < 12) greetingEl.textContent = 'Good morning';
+            else if (hour < 18) greetingEl.textContent = 'Good afternoon';
+            else greetingEl.textContent = 'Good evening';
+        }
+
+        function renderSidebarPlaylists() {
+            const container = document.getElementById('sidebar-playlists');
+            const likedCount = tracks.filter(t => t.liked).length;
+            container.innerHTML = playlists.map(pl => {
+                const isActive = state.activeView === pl.id;
+                const count = pl.id === 'liked' ? `${likedCount} songs` : `${tracks.filter(t => t.playlist === pl.id).length} songs`;
+                return `
+                    <div onclick="switchView('${pl.id}')" class="flex items-center gap-3 p-2 rounded-md cursor-pointer transition group ${isActive ? 'bg-spotify-highlight' : 'hover:bg-[#1f1f1f]'}">
+                        <div class="w-12 h-12 rounded flex items-center justify-center flex-shrink-0 shadow-md" style="background: linear-gradient(135deg, ${pl.color1}, ${pl.color2})">
+                            <i class="fa-solid ${pl.icon} text-white text-lg"></i>
+                        </div>
+                        <div class="overflow-hidden flex-1">
+                            <div class="text-sm font-semibold truncate ${isActive ? 'text-spotify-green' : 'text-white'}">${pl.name}</div>
+                            <div class="text-xs text-spotify-subdued truncate">Playlist • ${count}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderQuickAccess() {
+            const container = document.getElementById('quick-access-grid');
+            const quickItems = [
+                { type: 'playlist', id: 'Hindi Hits', title: 'Hindi Superhits', coverGradient: 'linear-gradient(135deg, #f97316, #b91c1c)', icon: 'fa-fire-flame-curved' },
+                { type: 'playlist', id: 'Bhojpuri Beats', title: 'Bhojpuri DJ Beats', coverGradient: 'linear-gradient(135deg, #ec4899, #7e22ce)', icon: 'fa-bolt' },
+                ...tracks.slice(0, 4).map(t => ({ type: 'track', id: t.id, title: t.title, cover: t.cover }))
+            ];
+            container.innerHTML = quickItems.map((item, idx) => {
+                const isCurrentTrack = item.type === 'track' && tracks[state.currentTrackIndex].id === item.id;
+                const clickAction = item.type === 'playlist' ? `switchView('${item.id}')` : `playTrackById(${item.id})`;
+                return `
+                    <div onclick="${clickAction}" onmousemove="tiltElement(event, this)" onmouseleave="resetTilt(this)" class="card-3d bg-white/10 hover:bg-white/20 transition rounded-xl flex items-center justify-between pr-4 overflow-hidden cursor-pointer group h-16">
+                        <div class="flex items-center gap-3.5 overflow-hidden h-full">
+                            ${item.type === 'playlist' 
+                                ? `<div class="w-16 h-16 flex items-center justify-center flex-shrink-0 shadow-lg" style="background: ${item.coverGradient}"><i class="fa-solid ${item.icon} text-white text-xl"></i></div>`
+                                : `<img src="${item.cover}" alt="${item.title}" class="w-16 h-16 object-cover flex-shrink-0">`
+                            }
+                            <span class="font-bold text-sm truncate ${isCurrentTrack ? 'text-spotify-green' : 'text-white'}">${item.title}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderSuperstars() {
+            const container = document.getElementById('superstars-grid');
+            if (!container) return;
+            container.innerHTML = superstars.map(star => `
+                <div onclick="openArtistPlaylist('${star.id}')" onmousemove="tiltElement(event, this)" onmouseleave="resetTilt(this)" class="card-3d bg-spotify-elevated hover:bg-spotify-cardHover p-4 rounded-xl cursor-pointer flex flex-col items-center text-center group">
+                    <div class="relative mb-3 w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shadow-2xl ring-2 ring-white/15 group-hover:ring-spotify-green transition bg-black">
+                        <img src="${star.photo}" onerror="this.onerror=null; this.src='${star.fallbackPhoto}';" alt="${star.name}" class="w-full h-full object-cover object-top group-hover:scale-110 transition duration-300">
+                    </div>
+                    <h3 class="font-bold text-sm text-white truncate w-full group-hover:text-spotify-green transition">${star.name}</h3>
+                    <p class="text-[11px] text-spotify-subdued truncate w-full mb-1">${star.role}</p>
+                </div>
+            `).join('');
+        }
+
+        function openArtistPlaylist(artistId) {
+            switchView(`artist:${artistId}`);
+            const artistTracks = tracks.filter(t => t.artist.toLowerCase().includes(artistId.toLowerCase()));
+            if (artistTracks.length > 0) {
+                const idx = tracks.findIndex(t => t.id === artistTracks[0].id);
+                if (idx !== -1) {
+                    state.currentTrackIndex = idx;
+                    state.isPlaying = true;
+                    startAudioScheduler();
+                    refreshAllUI();
+                }
+            }
+            showToast(`Opening ${artistId} Playlist!`);
+        }
+
+        function renderFeaturedCards() {
+            const container = document.getElementById('featured-cards-grid');
+            container.innerHTML = tracks.slice(0, 8).map(track => `
+                <div onclick="playTrackById(${track.id})" onmousemove="tiltElement(event, this)" onmouseleave="resetTilt(this)" class="card-3d bg-spotify-elevated hover:bg-spotify-cardHover p-4 rounded-xl cursor-pointer flex flex-col group">
+                    <div class="relative mb-3.5 aspect-square w-full rounded-lg overflow-hidden shadow-2xl">
+                        <img src="${track.cover}" alt="${track.title}" class="w-full h-full object-cover">
+                    </div>
+                    <h3 class="font-bold text-sm truncate text-white">${track.title}</h3>
+                    <p class="text-xs text-spotify-subdued line-clamp-1">${track.artist}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderTracklist() {
+            const container = document.getElementById('tracklist-container');
+            let list = [...tracks];
+            if (state.activeView === 'liked') list = list.filter(t => t.liked);
+            else if (state.activeView.startsWith('artist:')) {
+                const artistId = state.activeView.replace('artist:', '');
+                list = tracks.filter(t => t.artist.toLowerCase().includes(artistId.toLowerCase()));
+            } else if (state.activeView !== 'home' && state.activeView !== 'all-tracks') {
+                list = list.filter(t => t.playlist === state.activeView);
+            }
+
+            container.innerHTML = list.map((track, idx) => {
+                const isCurrent = tracks[state.currentTrackIndex].id === track.id;
+                return `
+                    <div onclick="playTrackById(${track.id})" class="grid grid-cols-[36px_1fr_auto] md:grid-cols-[40px_1.5fr_1fr_auto] gap-4 items-center px-4 py-2.5 rounded-lg cursor-pointer group ${isCurrent ? 'bg-white/15 border border-spotify-green/40' : 'hover:bg-white/10'}">
+                        <div class="text-center text-sm text-spotify-subdued">${idx + 1}</div>
+                        <div class="flex items-center gap-3.5 overflow-hidden">
+                            <img src="${track.cover}" alt="${track.title}" class="w-10 h-10 rounded-md object-cover flex-shrink-0">
+                            <div class="overflow-hidden">
+                                <div class="text-sm font-semibold truncate ${isCurrent ? 'text-spotify-green' : 'text-white'}">${track.title}</div>
+                                <div class="text-xs text-spotify-subdued truncate">${track.artist}</div>
+                            </div>
+                        </div>
+                        <div class="hidden md:block text-sm text-spotify-subdued truncate">${track.album}</div>
+                        <div class="flex items-center gap-6 pr-2">
+                            <span class="text-xs text-spotify-subdued font-mono w-9 text-right">${formatTime(track.duration)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updatePlayerBarUI() {
+            const currentTrack = tracks[state.currentTrackIndex];
+            document.getElementById('player-cover').src = currentTrack.cover;
+            document.getElementById('player-title').textContent = currentTrack.title;
+            document.getElementById('player-artist').textContent = `${currentTrack.artist} • ${currentTrack.language}`;
+            document.getElementById('total-duration').textContent = formatTime(currentTrack.duration);
+
+            const heroTitle = document.getElementById('hero-title');
+            const heroArtist = document.getElementById('hero-artist');
+            const heroCover = document.getElementById('hero-vinyl-cover');
+            const vinylDisc = document.getElementById('vinyl-disc');
+            const heroPlayIcon = document.getElementById('hero-play-icon');
+            const heroPlayText = document.getElementById('hero-play-text');
+            const aiDancerStage = document.getElementById('ai-dancer-stage');
+
+            if (heroTitle) {
+                heroTitle.textContent = currentTrack.title;
+                heroArtist.textContent = `${currentTrack.artist} • ${currentTrack.album}`;
+                heroCover.src = currentTrack.cover;
+
+                const beatSeconds = (60 / currentTrack.bpm).toFixed(2);
+                if (aiDancerStage) aiDancerStage.style.setProperty('--beat-speed', `${beatSeconds}s`);
+
+                if (state.isPlaying) {
+                    vinylDisc.classList.add('vinyl-spinning');
+                    if (aiDancerStage) aiDancerStage.classList.add('dancer-live-moving');
+                    heroPlayIcon.className = 'fa-solid fa-pause';
+                    heroPlayText.textContent = 'Pause Dance';
+                } else {
+                    vinylDisc.classList.remove('vinyl-spinning');
+                    if (aiDancerStage) aiDancerStage.classList.remove('dancer-live-moving');
+                    heroPlayIcon.className = 'fa-solid fa-play';
+                    heroPlayText.textContent = 'Play & Dance';
+                }
+            }
+            updateSeekUI();
+        }
+
+        function updateSeekUI() {
+            const currentTrack = tracks[state.currentTrackIndex];
+            const seekSlider = document.getElementById('seek-slider');
+            const pct = (state.currentTime / currentTrack.duration) * 100 || 0;
+            seekSlider.value = pct;
+            seekSlider.style.background = `linear-gradient(to right, #1DB954 ${pct}%, #4d4d4d ${pct}%)`;
+            document.getElementById('current-time').textContent = formatTime(state.currentTime);
+        }
+
+        function updateVolumeUI() {
+            const volSlider = document.getElementById('volume-slider');
+            const effectiveVol = state.isMuted ? 0 : Math.round(state.volume * 100);
+            volSlider.value = effectiveVol;
+            volSlider.style.background = `linear-gradient(to right, #1DB954 ${effectiveVol}%, #4d4d4d ${effectiveVol}%)`;
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(state.isMuted ? 0 : state.volume * 0.35, audioCtx.currentTime);
+        }
+
+        function playTrackById(id) {
+            const index = tracks.findIndex(t => t.id === id);
+            if (index === -1) return;
+            state.currentTrackIndex = index;
+            state.currentTime = 0;
+            stepIndex = 0;
+            state.isPlaying = true;
+            startAudioScheduler();
+            refreshAllUI();
+        }
+
+        function togglePlayPause() {
+            state.isPlaying = !state.isPlaying;
+            if (state.isPlaying) startAudioScheduler();
+            else stopAudioScheduler();
+            refreshAllUI();
+        }
+
+        function nextTrack() {
+            state.currentTrackIndex = (state.currentTrackIndex + 1) % tracks.length;
+            state.currentTime = 0;
+            stepIndex = 0;
+            state.isPlaying = true;
+            startAudioScheduler();
+            refreshAllUI();
+        }
+
+        function prevTrack() {
+            state.currentTrackIndex = (state.currentTrackIndex - 1 + tracks.length) % tracks.length;
+            state.currentTime = 0;
+            stepIndex = 0;
+            state.isPlaying = true;
+            startAudioScheduler();
+            refreshAllUI();
+        }
+
+        function toggleShuffle() { state.isShuffle = !state.isShuffle; showToast(state.isShuffle ? 'Shuffle enabled' : 'Shuffle disabled'); }
+        function toggleRepeat() { state.isRepeat = !state.isRepeat; showToast(state.isRepeat ? 'Repeat enabled' : 'Repeat disabled'); }
+        function toggleMute() { state.isMuted = !state.isMuted; updateVolumeUI(); }
+        function toggleCurrentTrackLike() { tracks[state.currentTrackIndex].liked = !tracks[state.currentTrackIndex].liked; refreshAllUI(); showToast('Updated Liked Songs'); }
+
+        function switchView(viewId) {
+            state.activeView = viewId;
+            const homeSections = document.getElementById('home-sections');
+            const playlistBanner = document.getElementById('playlist-banner');
+            if (viewId === 'home') {
+                homeSections.classList.remove('hidden');
+                playlistBanner.classList.add('hidden');
+            } else {
+                homeSections.classList.add('hidden');
+                playlistBanner.classList.remove('hidden');
+                playlistBanner.classList.add('flex');
+            }
+            refreshAllUI();
+        }
+
+        function filterByTag(tagName) { switchView(tagName); }
+        function focusSearch() { document.getElementById('search-input').focus(); }
+        function clearSearch() { document.getElementById('search-input').value = ''; renderTracklist(); }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').textContent = message;
+            toast.classList.remove('opacity-0');
+            toast.classList.add('opacity-100');
+            setTimeout(() => { toast.classList.remove('opacity-100'); toast.classList.add('opacity-0'); }, 2200);
+        }
+
+        // GREETING & WIZARD FLOW
+        function dismissGreetingAndOpenWizard() {
+            const greetingModal = document.getElementById('welcome-greeting-modal');
+            if (greetingModal) {
+                greetingModal.classList.add('welcome-hidden');
+                setTimeout(() => { greetingModal.style.display = 'none'; }, 600);
+            }
+            const welcomeScreen = document.getElementById('welcome-screen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.remove('welcome-hidden');
+            }
+        }
+
+        function selectWizardLang(lang, btnEl) {
+            state.wizardLang = lang;
+            document.querySelectorAll('.wizard-lang-btn').forEach(b => {
+                b.className = 'wizard-lang-btn p-3.5 rounded-2xl border-2 border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-sm flex flex-col items-center text-center gap-2 transition transform hover:scale-105';
+            });
+            btnEl.className = 'wizard-lang-btn p-3.5 rounded-2xl border-2 border-pink-400 bg-pink-500/30 text-white font-extrabold text-sm flex flex-col items-center text-center gap-2 shadow-lg transition transform hover:scale-105';
+            document.getElementById('wizard-preview-desc').textContent = `💃 Real Dancer is grooving to ${lang}!`;
+        }
+
+        function selectWizardMood(mood, btnEl) {
+            state.wizardMood = mood;
+            document.querySelectorAll('.wizard-mood-btn').forEach(b => {
+                b.className = 'wizard-mood-btn p-3 rounded-xl border border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-1.5 transition transform hover:scale-105';
+            });
+            btnEl.className = 'wizard-mood-btn p-3 rounded-xl border border-pink-400 bg-pink-500/30 text-white font-extrabold text-xs flex flex-col items-center text-center gap-1.5 shadow-lg transition transform hover:scale-105';
+            document.getElementById('wizard-preview-desc').textContent = `💃 Real Dancer matched vibe: ${mood}!`;
+        }
+
+        function selectWizardSound(sound, btnEl) {
+            state.soundPreset = sound;
+            document.querySelectorAll('.wizard-sound-btn').forEach(b => {
+                b.className = 'wizard-sound-btn p-3.5 rounded-2xl border-2 border-white/15 bg-white/5 text-purple-200 hover:bg-white/10 font-bold text-xs flex flex-col items-center text-center gap-2';
+            });
+            btnEl.className = 'wizard-sound-btn p-3.5 rounded-2xl border-2 border-pink-400 bg-pink-500/30 text-white font-extrabold text-xs flex flex-col items-center text-center gap-2 shadow-lg';
+        }
+
+        function goToWizardSlide(stepNum) {
+            state.wizardStep = stepNum;
+            document.querySelectorAll('.wizard-slide').forEach(s => s.classList.add('hidden'));
+            document.getElementById(`wizard-slide-${stepNum}`).classList.remove('hidden');
+            document.getElementById(`wizard-slide-${stepNum}`).classList.add('flex');
+            document.getElementById('wizard-step-indicator').textContent = `Step ${stepNum} of 3 • Welcome Wizard`;
+        }
+
+        const realDancerPhotos = [
+            "https://images.unsplash.com/photo-1547153760-18fc86324498?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
+        ];
+        let currentDancerPhotoIdx = 0;
+
+        function cycleWizardDancerPose() {
+            currentDancerPhotoIdx = (currentDancerPhotoIdx + 1) % realDancerPhotos.length;
+            const url = realDancerPhotos[currentDancerPhotoIdx];
+            document.getElementById('wizard-dancer-img').src = url;
+            document.getElementById('main-real-dancer-img').src = url;
+            showToast('Switched to live dancer feed!');
+        }
+
+        function cycleMainDancerPose() {
+            cycleWizardDancerPose();
+        }
+
+        function completeWizardAndPlay() {
+            const nameInput = document.getElementById('wizard-user-name');
+            if (nameInput && nameInput.value.trim() !== '') state.userName = nameInput.value.trim();
+
+            const welcomeEl = document.getElementById('welcome-screen');
+            if (welcomeEl) {
+                welcomeEl.classList.add('welcome-hidden');
+                setTimeout(() => { welcomeEl.style.display = 'none'; }, 650);
+            }
+
+            switchView(state.wizardLang);
+            const matching = tracks.filter(t => t.playlist === state.wizardLang);
+            if (matching.length > 0) {
+                const idx = tracks.findIndex(t => t.id === matching[0].id);
+                if (idx !== -1) state.currentTrackIndex = idx;
+            }
+
+            state.isPlaying = true;
+            state.currentTime = 0;
+            stepIndex = 0;
+            startAudioScheduler();
+            refreshAllUI();
+            showToast(`✨ Welcome ${state.userName}! Enjoy your ${state.wizardMood} session!`);
+        }
+
+        function showWelcomeScreen() {
+            const welcomeEl = document.getElementById('welcome-screen');
+            if (welcomeEl) {
+                welcomeEl.style.display = 'flex';
+                requestAnimationFrame(() => { welcomeEl.classList.remove('welcome-hidden'); });
+            }
+        }
+
+        function refreshAllUI() {
+            renderSidebarPlaylists();
+            renderQuickAccess();
+            renderSuperstars();
+            renderFeaturedCards();
+            renderTracklist();
+            updatePlayerBarUI();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            setGreeting();
+            refreshAllUI();
+            updateVolumeUI();
+        });
+    </script>
+</body>
+</html>
